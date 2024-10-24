@@ -1,55 +1,54 @@
 ---
-title: "Title"
-author: "Author"
-email: "Email"
-date: '`r format(Sys.time(), "%B %d, %Y")`'
-output: 
+output:
   bookdown::word_document2:
-    reference_docx: WordTemplate.docx
+    reference_docx: Template.docx
     fig_caption: yes
     toc: no
     number_sections: no
     df_print: kable
-csl: "`r here:::here('ecology.csl')`"
-bibliography: "`r here:::here('MyLib.bib')`"
+editor_options: 
+  chunk_output_type: inline
+bibliography: references.bib
+link-citations: true
 urlcolor: blue
 linkcolor: blue
 citationcolor: blue
+csl: "`r here:::here('citationstyle.csl')`"
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
-	echo = F,
-	fig.align = "center",
+  echo = FALSE,
 	message = FALSE,
 	warning = FALSE,
-	dpi = 300,
 	progress = FALSE,
-	cache = FALSE
+	cache = FALSE,
+	dpi = 300
 )
 
-ipak <- function(pkg){
-    new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
-    if (length(new.pkg)>0) {
-             install.packages(new.pkg, dependencies = TRUE)
-    }
-    easypackages::libraries(pkg)
-}
-
+set.seed(513)
 options(repos = c(CRAN = "http://cran.rstudio.com"))
+options(timeout=60*30) #timeout downloads that last longer than 30 minutes
 
-### Import libraries
-ipak(c('here', 'ggplot2','ggsci', 'patchwork', 'knitr', 'kableExtra', 'bookdown'))
-
-
-set.seed(2020)
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(
+  knitr, # markdown documents
+  flextable, # plot tables
+  bookdown, # figure numbering in markdown
+  here, # easy file structure
+  tidyverse, # data manipulation
+  ggplot2, # figures
+  patchwork # multiple figures
+) 
+#terraOptions(progress=0) # suppress all progress bars in terra
+#cores <- parallel::detectCores() # Set number of cores for parallel processing
 
 # Set custom plotting theme
 theme_new <- function(base_size = 9,base_family = "Helvetica"){
   theme_classic(base_size = base_size, base_family = base_family) %+replace%
     theme(
-      axis.line.x = element_line(color="black", size = 0.25),
-      axis.line.y = element_line(color="black", size = 0.25),
+      axis.line.x = element_line(color="black", linewidth = 0.25),
+      axis.line.y = element_line(color="black", linewidth = 0.25),
       axis.title = element_text(size = 9),
       axis.text = element_text(colour="black", size=8),
       legend.key=element_rect(colour=NA, fill =NA),
@@ -62,72 +61,21 @@ theme_new <- function(base_size = 9,base_family = "Helvetica"){
       
     )
 }
-theme_black = function(base_size = 12, base_family = "Helvetica") {
-  
-  theme_grey(base_size = base_size, base_family = base_family) %+replace%
-    
-    theme(
-      # Specify axis options
-      axis.line = element_blank(),  
-      axis.text.x = element_text(size = base_size*0.8, color = "white", lineheight = 0.9),  
-      axis.text.y = element_text(size = base_size*0.8, color = "white", lineheight = 0.9),  
-      axis.ticks = element_line(color = "white", size  =  0.2),  
-      axis.title.x = element_text(size = base_size, color = "white", margin = margin(10, 0, 0, 0)),  
-      axis.title.y = element_text(size = base_size, color = "white", angle = 90, margin = margin(0, 10, 0, 0)),  
-      axis.ticks.length = unit(0.3, "lines"),   
-      # Specify legend options
-      legend.background = element_rect(color = NA, fill = rgb(50, 50, 50, maxColorValue = 255)),  
-      legend.key = element_rect(color = "white",  fill = rgb(50, 50, 50, maxColorValue = 255)),  
-      legend.key.size = unit(1.2, "lines"),  
-      legend.key.height = NULL,  
-      legend.key.width = NULL,      
-      legend.text = element_text(size = base_size*0.8, color = "white"),  
-      legend.title = element_text(size = base_size*0.8, face = "bold", hjust = 0, color = "white"),  
-      legend.position = "right",  
-      legend.text.align = NULL,  
-      legend.title.align = NULL,  
-      legend.box = NULL, 
-      # Specify panel options
-      panel.background = element_rect(fill = rgb(50, 50, 50, maxColorValue = 255), color  =  NA),  
-      panel.border = element_rect(fill = NA, color = "white"),  
-      panel.grid.major = element_line(color = NA),  
-      panel.grid.minor = element_line(color = NA),  
-      panel.margin = unit(0.5, "lines"),   
-      # Specify facetting options
-      strip.background = element_rect(fill = "grey30", color = "grey10"),  
-      strip.text.x = element_text(size = base_size*0.8, color = "white"),  
-      strip.text.y = element_text(size = base_size*0.8, color = "white",angle = -90),  
-      # Specify plot options
-      plot.background = element_rect(color =rgb(50, 50, 50, maxColorValue = 255), fill = rgb(50, 50, 50, maxColorValue = 255)),  
-      plot.title = element_text(size = base_size*1.2, color = "white"),  
-      plot.margin = unit(rep(1, 4), "lines")
-      
-    )
-  
-}
 theme_set(theme_new())
 
-options(ggplot2.continuous.colour="viridis")
-scale_colour_discrete <- scale_fill_npg
-scale_fill_discrete <- scale_fill_npg
-options(scipen=999)
-
-fig.width1 <- 3.4
-fig.width2 <- 7
-fig.width1.5 <- 4.48
-
-pt.width1 <-fig.width1 * 72
-pt.width2 <-fig.width2 * 72
-pt.width1.5 <- fig.width1.5 * 72
-
-# Set projection - NAD83 / Conus Albers
-aea.proj <- "EPSG:5070"
-
-options(timeout=60*30) #timeout downloads that last longer than 30 minutes
+set_flextable_defaults(
+  font.family="Times", 
+  font.size=12,
+  line_spacing=1,
+  padding.bottom=1,
+  padding.top=1,
+  text.align='center')
 
 # Set directory structure for project
-dir.create(here("Data/"), showWarnings = FALSE)
-dir.create(here("Results/"), showWarnings = FALSE)
+dir.create(here("Data"), showWarnings = FALSE)
+dir.create(here("Data", "Spatial"), showWarnings = FALSE)
+dir.create(here("Results"), showWarnings = FALSE)
+dir.create(here("Results", "Figures"), showWarnings = FALSE)
 ```
 
 # Abstract
@@ -150,7 +98,9 @@ dir.create(here("Results/"), showWarnings = FALSE)
 
 # References
 
-<div id="refs"></div>
+::: {#refs}
+:::
+
 
 # Supplement
 
